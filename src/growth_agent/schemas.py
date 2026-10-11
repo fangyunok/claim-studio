@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 Locale = Literal["en-US", "es-ES"]
+
+
+# Marketing claim taxonomy used in v0.5.0 to distinguish puffery from fact
+# in the audit and draft generation layers. These labels mirror the FTC/NAD
+# comparative-claim conventions used in legal tooling (e.g. claude-for-legal /
+# marketing-claims-review). Field default is None so legacy knowledge cards
+# and draft inputs remain valid; downstream code treats None as "factual".
+ClaimNature = Literal["puffery", "factual", "comparative", "implied", "absolute"]
 
 
 class Brief(BaseModel):
@@ -28,6 +36,7 @@ class ClaimUse(BaseModel):
     fact_id: str = Field(min_length=1)
     sentence: str = Field(min_length=1)
     location: str = Field(min_length=1)
+    claim_nature: Optional[ClaimNature] = None
 
 
 class Draft(BaseModel):

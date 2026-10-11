@@ -48,6 +48,7 @@ class AuditIssue(BaseModel):
     kind: Literal["unsupported", "overstated", "needs_review"]
     reason: str = Field(min_length=1)
     fact_ids: list[str] = Field(default_factory=list)
+    claim_nature: Literal["puffery", "factual", "comparative", "implied", "absolute"] | None = None
 
 
 class AuditCitation(BaseModel):

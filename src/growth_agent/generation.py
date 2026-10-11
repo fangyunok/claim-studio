@@ -21,6 +21,38 @@ from .schemas import Brief, ClaimUse, Draft, GenerationResult
 PROMPT_VERSION = "growth-draft-v1"
 
 
+# Pricing tables for the v0.5.0 third-party LLM adapters. Values are in USD
+# per 1k tokens and reflect documented list prices from the relevant vendors
+# at the time of integration. A None entry disables cost computation for the
+# corresponding model; the generation result will leave `estimated_cost_usd`
+# unset instead of guessing. Always sanity-check the vendor bill at month end:
+# these numbers are only used to surface an order-of-magnitude estimate in
+# the audit bundle and are NOT a billing source of truth.
+DASHSCOPE_PRICING_PER_1K_TOKENS: dict[str, dict[str, float]] = {
+    "qwen-plus": {"prompt": 0.0004, "completion": 0.0012},
+    "qwen-turbo": {"prompt": 0.0003, "completion": 0.0006},
+    "qwen-max": {"prompt": 0.0024, "completion": 0.0096},
+    "qwen-long": {"prompt": 0.0005, "completion": 0.0020},
+}
+
+
+def _estimate_cost(model: str, pricing: dict[str, dict[str, float]] | None, prompt_tokens: int, completion_tokens: int) -> float | None:
+    """Compute a coarse order-of-magnitude USD cost for a generation call.
+
+    Returns None when no pricing entry is available so the contract stays
+    honest: a missing number is preferable to a wrong number.
+    """
+    if not pricing:
+        return None
+    rates = pricing.get(model)
+    if rates is None:
+        return None
+    if prompt_tokens < 0 or completion_tokens < 0:
+        return None
+    cost = (prompt_tokens / 1000.0) * rates["prompt"] + (completion_tokens / 1000.0) * rates["completion"]
+    return round(cost, 6)
+
+
 def _localized_fact(fact: dict[str, Any], locale: str) -> str:
     translations = fact.get("localized_statement", {})
     if locale not in translations:
@@ -113,6 +145,17 @@ class CompatibleApiGenerator:
 
     @classmethod
     def from_environment(cls) -> "CompatibleApiGenerator":
+        """Build the right provider for ``GROWTH_API_PROVIDER``.
+
+        The factory reads ``GROWTH_API_PROVIDER`` (default: ``generic``) and
+        dispatches to the matching subclass. Callers that pin a vendor can
+        instantiate the subclass directly without going through this method.
+        """
+        provider = os.getenv("GROWTH_API_PROVIDER", "generic").strip().lower() or "generic"
+        if provider == "dashscope":
+            return DashScopeApiGenerator.from_environment()
+        if provider == "deepseek":
+            return DeepSeekApiGenerator.from_environment()
         return cls(
             base_url=os.getenv("GROWTH_API_BASE", ""),
             model=os.getenv("GROWTH_MODEL", ""),
@@ -178,6 +221,7 @@ class CompatibleApiGenerator:
                     duration_ms=round((time.perf_counter() - start) * 1000),
                     input_tokens=total_input or None,
                     output_tokens=total_output or None,
+                    estimated_cost_usd=self._estimate_cost(total_input, total_output),
                 )
             except (KeyError, IndexError, TypeError, ValueError, ValidationError) as exc:
                 last_error = str(exc)
@@ -185,6 +229,15 @@ class CompatibleApiGenerator:
                     messages.append({"role": "assistant", "content": str(response.get("choices", [{}])[0].get("message", {}).get("content", ""))})
                     messages.append({"role": "user", "content": f"Repair the JSON to match the schema. Validation error: {last_error}"})
         raise ValueError(f"Model did not return a valid draft after 2 attempts: {last_error}")
+
+    def _estimate_cost(self, prompt_tokens: int, completion_tokens: int) -> float | None:
+        """Subclasses with a published pricing table override this hook.
+
+        The base implementation returns None because the endpoint is
+        unconstrained — the operator supplies the URL. Cost estimation is
+        only meaningful when the subclass knows the vendor pricing model.
+        """
+        return None
 
     def _request(self, messages: list[dict]) -> dict:
         url = f"{self.base_url}/chat/completions"
@@ -301,3 +354,66 @@ class QwenOllamaGenerator(CompatibleApiGenerator):
             "model": result.get("model"),
             "raw": result,
         }
+
+
+class DashScopeApiGenerator(CompatibleApiGenerator):
+    """OpenAI-compatible adapter for Alibaba Cloud DashScope (Qwen family).
+
+    Uses the publicly documented ``/compatible-mode/v1`` endpoint, which honours
+    the standard Chat Completions protocol — the only differences from the
+    generic adapter are the default base URL, the env-var name for the API
+    key, and a per-model USD cost estimator. The order of model preference
+    (qwen-plus → qwen-turbo) is configurable via ``GROWTH_QWEN_MODEL``.
+    """
+
+    generation_mode = "dashscope"
+
+    DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    DEFAULT_TIMEOUT_SECONDS = 60
+
+    @classmethod
+    def from_environment(cls) -> "DashScopeApiGenerator":
+        return cls(
+            base_url=os.getenv("GROWTH_DASHSCOPE_BASE", cls.DEFAULT_BASE_URL),
+            model=os.getenv("GROWTH_QWEN_MODEL") or os.getenv("GROWTH_MODEL", "qwen-plus"),
+            api_key=os.getenv("GROWTH_DASHSCOPE_API_KEY", ""),
+            timeout=int(os.getenv("GROWTH_DASHSCOPE_TIMEOUT", str(cls.DEFAULT_TIMEOUT_SECONDS))),
+        )
+
+    def _estimate_cost(self, prompt_tokens: int, completion_tokens: int) -> float | None:
+        return _estimate_cost(self.model, DASHSCOPE_PRICING_PER_1K_TOKENS, prompt_tokens, completion_tokens)
+
+
+class DeepSeekApiGenerator(CompatibleApiGenerator):
+    """OpenAI-compatible adapter for DeepSeek (deepseek-chat family).
+
+    DeepSeek ships an OpenAI-compatible endpoint. Vendor pricing here is
+    intentionally left unset because rates change frequently; the base
+    ``_estimate_cost`` therefore returns None and ``estimated_cost_usd``
+    stays unset in the bundle until an operator supplies a pricing table.
+    """
+
+    generation_mode = "deepseek"
+
+    DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
+
+    @classmethod
+    def from_environment(cls) -> "DeepSeekApiGenerator":
+        return cls(
+            base_url=os.getenv("GROWTH_DEEPSEEK_BASE", cls.DEFAULT_BASE_URL),
+            model=os.getenv("GROWTH_DEEPSEEK_MODEL", "deepseek-chat"),
+            api_key=os.getenv("GROWTH_DEEPSEEK_API_KEY", ""),
+            timeout=int(os.getenv("GROWTH_DEEPSEEK_TIMEOUT", "60")),
+        )
+
+
+__all__ = [
+    "PROMPT_VERSION",
+    "OfflineTemplateGenerator",
+    "CompatibleApiGenerator",
+    "QwenOllamaGenerator",
+    "DashScopeApiGenerator",
+    "DeepSeekApiGenerator",
+    "DASHSCOPE_PRICING_PER_1K_TOKENS",
+    "_estimate_cost",
+]
