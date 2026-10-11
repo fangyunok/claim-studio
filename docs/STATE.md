@@ -66,6 +66,19 @@
 - **检索侧继续测量**。已在本机 CPU 上完成 `bge-small-zh-v1.5` 与 `bge-reranker-base` 的五策略对比。下一步在 GPU 上测量 bge-m3 与多语言重排模型，并继续压缩重排延迟。
 - **部署与运维**。Docker 配置已提供；下一步补上镜像构建验证与并发压测，并把网页从本地单用户工具扩展为多用户审核。
 
+## v0.5.0 路线
+
+| 板块 | 当前 | 路线 |
+| --- | --- | --- |
+| 审校维度 | 字面规则 + 引用结构校验 | 增加 `claim_nature` 五分类（puffery / factual / comparative / implied / absolute），命中法律侧广告法规的标签口径 |
+| 模型 provider | `qwen`（Ollama 本地） + `api`（OpenAI 兼容） | 显化 DashScope / DeepSeek 适配路径，含 token 计费、超时与重试，配置项收敛到环境变量 |
+| 审批工作台 | 单 reviewer 一次性确认 | 评论 + 修改时间轴 + 多 reviewer 状态机（submitted → in_review → approved / changes_requested） |
+| 集成层 | 单机本地 CLI / Service | Webhook 推送（HMAC 签名，可在闭网环境停用）；宿主 Agent 把仓库挂成本地 MCP skill，详见 [`PROOF_GUARD_SKILL.md`](PROOF_GUARD_SKILL.md) |
+| 文档与可信任口径 | 检索／评测／服务说明 | 新增 [`TRUST_NOTES.md`](TRUST_NOTES.md) 描述审计日志、隔离、审批门、哨兵、部署边界，作为对外合作的可信任口径 |
+| 公网演示 | 仅本机端口 7860 | 适配 Hugging Face Spaces / WorkBuddy sites 的纯静态 demo 页（不接真模型，只跑模板数据） |
+
+v0.5.0 走**大版本号升一档**口径：变更集中在一个 PR，148 项既有测试不破坏；新能力由本节"路线"条目驱动，每个条目独立可回滚。
+
 ## 真实模型验证复现
 
 实际使用的配置：AutoDL RTX 3090 24 GB 运行 Ollama，本机经 SSH 隧道调用。注意 Ollama 在**无 GPU 时会回落到 4096 上下文**，因此必须确认 `nvidia-smi` 能看到 GPU 再跑评测。部署与选型细节见 [AutoDL 配置](AUTODL_SETUP.md)。
