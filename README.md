@@ -40,6 +40,8 @@ v0.3 增加“确认修订文案 → 三段模板分镜 → 自有图片 / 短�
 | 多人审批工作台 | 状态机 `submitted → in_review → {approved, changes_requested}`，评论 / 修改历史永久落在 `audit_workflow.json`，与 `audit_bundle.json` 共享同一 audit_digest | `approval_workflow.py` |
 
 ![审核工作台状态机与时间轴](docs/assets/approval-workflow-timeline.svg)
+
+**公网静态 demo**：<https://claim-studio-demo.app.workbuddy.host/>。不接真模型、不消耗 API 额度；5 个示范 SKU、5 策略切换控件、多人审批工作台形态、媒体链路预览全部内嵌。
 | 媒体链路 | 三段模板分镜 → FFmpeg 竖屏字幕 MP4，含完整解码检查 | [媒体说明](docs/MEDIA.md) |
 
 ## 各模块做什么

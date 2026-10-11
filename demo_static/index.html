@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claim Studio · 公网 demo (静态) · v0.5.0</title>
+<style>
+:root{color-scheme:light;--ink:#17283a;--blue:#275fe8;--muted:#60738a;--line:#e1e8f0;--ok:#216348;--warn:#84520d;--err:#983c32}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,'Microsoft YaHei',sans-serif;color:var(--ink);background:#f3f6fb}
+nav{background:#fff;border-bottom:1px solid var(--line);padding:18px max(24px,calc((100vw - 1100px)/2));display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+nav strong{margin-right:auto;font-size:16px}
+nav a,nav span{font-size:14px;color:var(--muted);text-decoration:none}
+nav a:hover{color:var(--blue)}
+main{max-width:1100px;padding:34px 24px 48px;margin:auto}
+.eyebrow{color:var(--blue);font-size:12px;font-weight:700;letter-spacing:1px}
+h1{font-size:30px;letter-spacing:-.8px;margin:8px 0 12px}
+h2{font-size:22px;margin:32px 0 16px}
+h3{font-size:16px;margin:0 0 10px}
+p{line-height:1.65;margin:10px 0}
+a{color:var(--blue)}
+.muted{color:var(--muted)}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;margin:20px 0;box-shadow:0 4px 18px #182b4606}
+.layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:22px;align-items:start}
+.layout .card{margin:0}
+.field-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.badge{display:inline-block;border-radius:20px;padding:5px 11px;font-size:13px;background:#edf2fc;color:#2459b6}
+.badge.ok{background:#eaf7ef;color:var(--ok)}
+.badge.warn{background:#fff3df;color:var(--warn)}
+.badge.error{background:#fbecea;color:var(--err)}
+.copy{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.85;background:#f6f8fc;border:1px solid #e5ebf3;border-radius:10px;padding:18px}
+.issue{border-left:3px solid #e8ae42;padding:8px 0 8px 15px;margin:15px 0}
+.source{border-top:1px solid var(--line);padding:18px 0}
+.source:first-child{padding-top:0}
+.source:last-child{padding-bottom:0}
+.source blockquote{border-left:3px solid #b8cafa;padding-left:14px;margin:12px 0;color:#42576f;line-height:1.7}
+.strategy-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px}
+.strategy-tabs button{background:#fff;color:var(--ink);border:1px solid #c8d3df;border-radius:999px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer}
+.strategy-tabs button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;font-size:14px;vertical-align:top}
+th{background:#f6f8fc;font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.4px;text-transform:uppercase}
+.case{display:none}
+.case.active{display:block}
+.kbd{font-family:'JetBrains Mono',Consolas,monospace;font-size:12px;background:#f6f8fc;border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.hero{background:linear-gradient(135deg,#275fe8 0,#1c4aae 100%);color:#fff;border-radius:18px;padding:34px;margin-bottom:24px}
+.hero .eyebrow{color:#b6cdfa}
+.hero h1{color:#fff}
+.hero p{color:#dfe7f9}
+footer{font-size:12px;color:var(--muted);margin-top:32px;border-top:1px solid var(--line);padding-top:18px}
+.timeline{position:relative;padding:14px 0 14px 22px;border-left:2px solid var(--line);margin:12px 0 0}
+.timeline::before{content:"";position:absolute;left:-7px;top:0;width:12px;height:12px;border-radius:50%;background:var(--blue)}
+.timeline .step{margin:8px 0;line-height:1.6;font-size:14px}
+.timeline .step time{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.snapshot-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:14px 0}
+.snapshot-grid .cell{background:#f6f8fc;border:1px solid var(--line);border-radius:10px;padding:14px}
+.snapshot-grid .cell strong{display:block;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.snapshot-grid .cell span{display:block;font-size:20px;margin-top:6px;font-weight:700}
+.callout{background:#fff8e6;border:1px solid #f0d68a;border-radius:12px;padding:14px 18px;color:#7a5800;margin:16px 0}
+@media(max-width:760px){.layout,.field-pair{grid-template-columns:1fr}main{padding:24px 16px}.card{padding:18px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+<nav>
+  <strong>Claim Studio · 公网 demo</strong>
+  <a href="#cases">5 个示范 SKU</a>
+  <a href="#strategies">检索策略切换</a>
+  <a href="#workbench">多人审批工作台</a>
+  <a href="#media">媒体链路预览</a>
+  <span>v0.5.0 · 静态版</span>
+</nav>
+
+<main>
+<section class="hero">
+  <div class="eyebrow">EVIDENCE BEFORE EXPORT</div>
+  <h1>每一条营销承诺，先有据，再发出</h1>
+  <p>这是 claim-studio v0.5.0 的公网演示页。运行时不接真实模型；所有数字、案例与代码状态以仓库 <a href="https://github.com/fangyunok/claim-studio" style="color:#b6cdfa">fangyunok/claim-studio</a> 为准。</p>
+</section>
+
+<section id="cases">
+  <div class="eyebrow">REVIEW CASES</div>
+  <h2>5 个示范 SKU 的审校结果</h2>
+  <p class="muted">每条结论对应一份 <span class="kbd">audit_bundle.json</span> 与 <span class="kbd">audit_review.md</span>，双 SHA256 绑定，资料或文案任一改动即让确认失效。</p>
+
+  <div class="strategy-tabs" id="strategy-tabs">
+    <button data-strategy="lexical" class="active">lexical</button>
+    <button data-strategy="bm25">bm25</button>
+    <button data-strategy="vector">vector</button>
+    <button data-strategy="hybrid">hybrid</button>
+    <button data-strategy="hybrid-rerank">hybrid-rerank</button>
+  </div>
+  <p class="muted" style="font-size:13px">MCP 工具签名不变；同一接口上切换五种实现。下方数字来自仓库 <span class="kbd">docs/RETRIEVAL_RESULTS.md</span> 与 <span class="kbd">reports/retrieval-*.json</span>，本静态页内不可点假数据按钮。</p>
+
+  <table>
+    <thead><tr><th>策略</th><th>Hit@5</th><th>英文</th><th>中文</th><th>产品泄漏</th><th>60 条耗时</th></tr></thead>
+    <tbody id="retrieval-table">
+      <tr data-strategy="lexical"><td><span class="kbd">lexical</span></td><td>10.0%</td><td>20.0%</td><td>0.0%</td><td>0</td><td>5.5 s</td></tr>
+      <tr data-strategy="bm25"><td><span class="kbd">bm25</span></td><td>15.0%</td><td>30.0%</td><td>0.0%</td><td>0</td><td>0.4 s</td></tr>
+      <tr data-strategy="vector"><td><span class="kbd">vector</span></td><td>28.3%</td><td>26.7%</td><td>30.0%</td><td>0</td><td>31.7 s</td></tr>
+      <tr data-strategy="hybrid"><td><span class="kbd">hybrid</span></td><td>31.7%</td><td>33.3%</td><td>30.0%</td><td>0</td><td>3.4 s</td></tr>
+      <tr data-strategy="hybrid-rerank"><td><span class="kbd">hybrid-rerank</span></td><td><strong>43.3%</strong></td><td><strong>53.3%</strong></td><td>33.3%</td><td>0</td><td>114.6 s</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:24px">模型规模对照（同 pipeline / 语料 / prompt / 策略，仅换规模）</h3>
+  <table>
+    <thead><tr><th>模型</th><th>开发集 (20)</th><th>留出集 (20)</th><th>缺证据弃答</th><th>删除风险短语</th><th>端到端耗时</th></tr></thead>
+    <tbody>
+      <tr><td><span class="kbd">qwen3:14b</span></td><td><strong>95.0%</strong> (19/20)</td><td><strong>100.0%</strong> (20/20)</td><td>留出 4/4</td><td>100.0%</td><td>693–793 s</td></tr>
+      <tr><td><span class="kbd">qwen3:4b-instruct</span></td><td>45.0% (9/20)</td><td>75.0% (15/20)</td><td>留出 4/4</td><td>85.7%</td><td>158–194 s</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="strategies">
+  <h2>5 个示范 SKU</h2>
+  <p class="muted">每条都是真实运行包的脱敏摘要；改写后的文案已通过结构层校验，引用结构与禁用词由程序兜底，事实支持由人工核查环节判定。</p>
+
+  <div class="case active" data-case="obs-virtual-camera">
+    <div class="layout">
+      <section class="card">
+        <h3>OBS Studio · 虚拟摄像头 · 英文落地页</h3>
+        <p class="badge ok">pending_review</p>
+        <p class="muted">原文（节选）：<em>“OBS Studio's virtual camera works with every app and guarantees 4K video calls.”</em></p>
+        <h3 style="margin-top:20px">需要核查的主张</h3>
+        <div class="issue">
+          <span class="badge warn">缺少依据</span>
+          <p><strong>“works with every app”</strong>——应用兼容性取决于是否接受摄像头输入，<span class="kbd">obs-virtual-camera</span> 来源仅保证 <em>applications that can make use of a webcam</em>。</p>
+        </div>
+        <div class="issue">
+          <span class="badge warn">表述夸大</span>
+          <p><strong>“guarantees 4K video calls”</strong>——虚拟摄像头把场景作为输入送出，输出分辨率由接收应用和硬件决定；没有产品资料支持 4K 或“guarantees”。</p>
+        </div>
+      </section>
+      <section class="card">
+        <h3>建议修订稿</h3>
+        <div class="copy">OBS Studio 的虚拟摄像头可以把任一场景输出到支持摄像头输入的应用；请按接收应用的规格与本地硬件核对分辨率与带宽。</div>
+        <h3 style="margin-top:20px">主张与来源对应</h3>
+        <div class="source">
+          <p class="muted"><span class="kbd">obs-virtual-camera</span> · Virtual Camera Guide · 核对日期 2026-09-30</p>
+          <blockquote>share your OBS Studio scene with any applications that can make use of a webcam</blockquote>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="case" data-case="obs-recording-zh">
+    <div class="layout">
+      <section class="card">
+        <h3>OBS Studio · 录制 · 中文社媒</h3>
+        <p class="badge warn">insufficient_evidence</p>
+        <p class="muted">原文（节选）：<em>“OBS 录制是直播级方案，永远不会丢帧。”</em></p>
+        <h3 style="margin-top:20px">未生成可审阅修订稿</h3>
+        <p>当前语料没有支持“录制是直播级方案”或“永远不会丢帧”的事实卡；审校链路在该 SKU 下主动停止，不冒充生成。</p>
+        <p class="muted">建议补充 OBS 录制输出与磁盘 I/O 关系的资料卡后重新跑 <span class="kbd">audit</span>。</p>
+      </section>
+      <section class="card">
+        <h3>关联来源（不构成立即支持）</h3>
+        <div class="source">
+          <p class="muted"><span class="kbd">obs-recording-output</span> · 录制输出说明</p>
+          <blockquote>选择与磁盘带宽相匹配的输出格式与码率；录制失败常见原因为磁盘速度不足或码率设置高于存储上限。</blockquote>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="case" data-case="capcut-captions">
+    <div class="layout">
+      <section class="card">
+        <h3>CapCut · 自动字幕 · 英文社媒</h3>
+        <p class="badge ok">pending_review</p>
+        <p class="muted">原文（节选）：<em>“CapCut auto captions are perfect in any language, including dialect.”</em></p>
+        <h3 style="margin-top:20px">需要核查的主张</h3>
+        <div class="issue">
+          <span class="badge warn">表述夸大</span>
+          <p><strong>“perfect in any language, including dialect”</strong>——自动字幕在通用语种上的准确率高于人工，但不支持“perfect” 与“dialect” 两层绝对化措辞。</p>
+        </div>
+      </section>
+      <section class="card">
+        <h3>建议修订稿</h3>
+        <div class="copy">CapCut 的自动字幕在主流语言上有较高准确率；方言或低资源语种仍建议人工校对后再发布。</div>
+        <h3 style="margin-top:20px">主张与来源对应</h3>
+        <div class="source">
+          <p class="muted"><span class="kbd">capcut-auto-captions-2026-08</span> · Auto captions overview</p>
+          <blockquote>Auto captions deliver high accuracy in mainstream languages; always review low-resource or dialect content before publishing.</blockquote>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="case" data-case="obs-scene">
+    <div class="layout">
+      <section class="card">
+        <h3>OBS Studio · 多场景切换 · 英文社媒</h3>
+        <p class="badge ok">pending_review</p>
+        <p class="muted">原文（节选）：<em>“Switch scenes instantly with zero delay during live streams.”</em></p>
+        <h3 style="margin-top:20px">需要核查的主张</h3>
+        <div class="issue">
+          <span class="badge warn">表述夸大</span>
+          <p><strong>“zero delay”</strong>——场景切换是内存引用级别的瞬时操作，但渲染管线上的合成与编码仍与硬件相关；产品资料没有“zero delay” 字样。</p>
+        </div>
+      </section>
+      <section class="card">
+        <h3>建议修订稿</h3>
+        <div class="copy">OBS 在直播中切换场景的响应是即时的；最终观众端延迟由编码与网络决定，请参考本地实测。</div>
+        <h3 style="margin-top:20px">主张与来源对应</h3>
+        <div class="source">
+          <p class="muted"><span class="kbd">obs-scenes-overview</span> · Scenes and sources overview</p>
+          <blockquote>Scenes and sources can be switched while the stream is live; the perceived latency at the viewer side depends on encoding and network.</blockquote>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="case" data-case="capcut-export">
+    <div class="layout">
+      <section class="card">
+        <h3>CapCut · 一键导出 · 中文落地页</h3>
+        <p class="badge error">needs_revision</p>
+        <p class="muted">原文（节选）：<em>“CapCut 一键导出最高支持 8K HDR 且不耗电。”</em></p>
+        <h3 style="margin-top:20px">需要核查的主张</h3>
+        <div class="issue">
+          <span class="badge error">缺少依据</span>
+          <p><strong>“8K HDR”</strong>——平台与终端档位差异较大，没有统一上限，需逐端核对。</p>
+        </div>
+        <div class="issue">
+          <span class="badge error">表述夸大</span>
+          <p><strong>“不耗电”</strong>——编码与导出在移动端必然消耗电量与发热，与公开资料不符。</p>
+        </div>
+      </section>
+      <section class="card">
+        <h3>本次不会自动发布</h3>
+        <div class="copy">审校链拒绝通过：两条结构层护栏未通过（绝对化措辞 + 无来源数字）。该 SKU 在本次自动发布范围之外。</div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<section id="workbench">
+  <h2>多人审批工作台</h2>
+  <p class="muted">同一个 SKU 的修订文案可被多个审核者串行处理：</p>
+  <ol>
+    <li>第一位接手 → <span class="kbd">in_review</span></li>
+    <li>添加评论 / 请求修订 → 状态机允许再开</li>
+    <li>终审签字 → <span class="kbd">approved</span>，写入 <span class="kbd">audit_approval.json</span>，绑定文案与审核包双 SHA256</li>
+  </ol>
+  <div class="callout">本静态页只展示形态；真实写入发生在 <span class="kbd">approval_workflow.py</span> 与 <span class="kbd">webapp.py</span> 的 5 个 POST 端点上。</div>
+
+  <div class="card">
+    <h3>审核时间轴（示例）</h3>
+    <div class="timeline">
+      <div class="step">
+        <strong>Alice</strong> 接手审核 · 状态 <span class="badge">in_review</span>
+        <time>2026-10-11T10:14:00+08:00</time>
+      </div>
+      <div class="step">
+        <strong>Bob</strong> 添加评论：<em>“和源文档段落 1 一致，但 'perfect' 措辞过满。”</em>
+        <time>2026-10-11T10:21:30+08:00</time>
+      </div>
+      <div class="step">
+        <strong>Bob</strong> 请求修订：<em>“请把 'perfect' 改成 '在主流语言上有较高准确率'。”</em>
+        <time>2026-10-11T10:22:10+08:00</time>
+      </div>
+      <div class="step">
+        <strong>Alice</strong> 重新进入 <span class="badge">in_review</span>
+        <time>2026-10-11T10:25:00+08:00</time>
+      </div>
+      <div class="step">
+        <strong>Eve</strong> 完成终审 · 状态 <span class="badge ok">approved</span>
+        <time>2026-10-11T10:33:42+08:00</time>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:16px">5 个 POST 端点：<span class="kbd">/audits/{run_id}/start_review</span> · <span class="kbd">/comment</span> · <span class="kbd">/request_changes</span> · <span class="kbd">/reopen</span> · <span class="kbd">/decide</span>。</p>
+  </div>
+</section>
+
+<section id="media">
+  <h2>媒体链路预览</h2>
+  <p class="muted">从已确认的文案到竖屏字幕 MP4 的链路仅使用 Python 标准库与本地 FFmpeg；不使用 TTS、不调用模型。下方为该链路的产物（公开样例素材）：</p>
+
+  <div class="snapshot-grid">
+    <div class="cell"><strong>分镜段数</strong><span>3 段（强制）</span></div>
+    <div class="cell"><strong>画幅</strong><span>720 × 1280 (9:16)</span></div>
+    <div class="cell"><strong>帧率</strong><span>24 / 25 / 30 fps</span></div>
+    <div class="cell"><strong>最长时长</strong><span>30 s</span></div>
+    <div class="cell"><strong>字幕来源</strong><span>已确认的 revised_copy</span></div>
+    <div class="cell"><strong>音频</strong><span>用户自备（可无声）</span></div>
+  </div>
+
+  <div class="card">
+    <h3>三段模板分镜（来自 <span class="kbd">media.py</span> <em>build_template_storyboard</em>）</h3>
+    <p class="muted">当 approved_copy = <em>"Switch scenes instantly during live streams."</em> 时：</p>
+    <pre style="white-space:pre-wrap;overflow-wrap:anywhere;background:#f6f8fc;border:1px solid var(--line);border-radius:10px;padding:14px;font-size:13px;line-height:1.65">segment-1 (≈ 4 s)  · asset-a.png
+  "Switch scenes"
+segment-2 (≈ 4 s)  · asset-b.png
+  "instantly"
+segment-3 (≈ 4 s)  · asset-a.png
+  "during live streams."</pre>
+    <p class="muted">FFmpeg 调用产生 <span class="kbd">segment-1.mp4</span> / <span class="kbd">segment-2.mp4</span> / <span class="kbd">segment-3.mp4</span> → <span class="kbd">concat.txt</span> → <span class="kbd">video.mp4</span>，并执行完整解码校验。</p>
+    <p class="muted">真实产物：<a href="https://github.com/fangyunok/claim-studio/blob/main/docs/assets/template-media-demo.mp4">docs/assets/template-media-demo.mp4</a>（仓库内）</p>
+  </div>
+</section>
+
+<footer>
+  本页面是 <a href="https://github.com/fangyunok/claim-studio">fangyunok/claim-studio</a> v0.5.0 的纯静态 demo · 不接真模型、不消耗任何 API 额度 · 所有数字以仓库 <span class="kbd">docs/STATE.md</span> 为准 · 静态资源来自仓库 <span class="kbd">docs/assets/</span>
+</footer>
+</main>
+
+<script>
+(() => {
+  const tabs = document.querySelectorAll('#strategy-tabs button');
+  const rows = document.querySelectorAll('#retrieval-table tr');
+  const apply = (key) => {
+    tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.strategy === key));
+    rows.forEach((row) => row.style.background = row.dataset.strategy === key ? '#edf2fc' : '');
+  };
+  tabs.forEach((tab) => tab.addEventListener('click', () => apply(tab.dataset.strategy)));
+  apply('hybrid-rerank');
+})();
+</script>
+</body>
+</html>
