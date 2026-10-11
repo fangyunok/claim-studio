@@ -18,6 +18,15 @@ from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Redire
 from starlette.routing import Route
 
 from .approval import approve_audit, load_approved_copy
+from .approval_workflow import (
+    ApprovalWorkflow,
+    comment_on_audit,
+    load_approval_workflow,
+    reopen_for_review,
+    request_changes,
+    start_review,
+    submit_approval_decision,
+)
 from .audit import AuditBundle, AuditRequest, run_audit
 from .jobs import JobManager, JobQueueFull
 from .knowledge import KnowledgeBase
@@ -32,6 +41,13 @@ _RUN_ID = re.compile(r"[A-Za-z0-9_-]{1,200}\Z")
 _STATES = {"queued": "等待处理", "running": "正在核查", "completed": "处理完成", "failed": "处理失败", "interrupted": "任务中断"}
 _AUDIT_STATES = {"pending_review": "等待人工确认", "insufficient_evidence": "资料不足", "needs_revision": "仍需修订", "model_error": "模型调用失败"}
 _ISSUE_LABELS = {"unsupported": "缺少依据", "overstated": "表述夸大", "needs_review": "需要核查"}
+_WORKFLOW_LABELS = {
+    "submitted": "待指派",
+    "in_review": "多人审核中",
+    "changes_requested": "已请求修订",
+    "approved": "已经多方确认",
+    "rejected": "审核未通过",
+}
 _STYLE = """
 <style>
 :root{color-scheme:light;--ink:#17283a;--blue:#275fe8;--muted:#60738a;--line:#e1e8f0}
@@ -320,6 +336,7 @@ async def audit_review(request: Request) -> HTMLResponse:
     source_content = sources or '<p class="muted">没有对应产品资料。</p>'
     revised_copy = proposal.revised_copy if proposal else '没有产生可审阅的修订稿。'
     status_class = 'ok' if bundle.status == 'pending_review' else 'warn'
+    workflow_section = _render_workflow_section(directory, bundle, proposal, audit_snapshot_digest, version)
     return _page('文案与来源审核', (
         "<div class='eyebrow'>REVIEW BEFORE CONFIRMATION</div>"
         f"<h1>{_esc(bundle.request.product_name)} · 文案审核</h1>"
@@ -331,7 +348,7 @@ async def audit_review(request: Request) -> HTMLResponse:
         "<section class='card'><h2>建议修订稿</h2>"
         f"<div class='copy'>{_esc(revised_copy)}</div>"
         f"<h2 style='margin-top:24px'>主张与来源对应</h2>{citation_content}</section></div>"
-        f"<section class='card'><h2>本次检索到的资料</h2>{source_content}</section>{approval}"
+        f"<section class='card'><h2>本次检索到的资料</h2>{source_content}</section>{approval}{workflow_section}"
         f"<details><summary>查看开发记录与字面检查</summary><pre>{trace}</pre></details>"
         "<p><a href='/'>再审核一条文案</a></p>"
     ))
@@ -357,6 +374,170 @@ async def audit_approve(request: Request):
         return _page('无法确认', f"<h1>无法确认</h1><p>{_esc(exc.message)}</p>", exc.status)
     except (OSError, ValueError, TypeError) as exc:
         return _page('无法确认', f"<h1>无法确认当前版本</h1><p>{_esc(exc)}</p><a href='/'>返回审核页面</a>", 409)
+
+
+def _render_workflow_section(
+    directory: Path,
+    bundle: AuditBundle,
+    proposal,
+    audit_snapshot_digest: str,
+    version: str,
+) -> str:
+    """Render the multi-reviewer timeline, actions, and decision panel."""
+    workflow = load_approval_workflow(directory)
+    if workflow is None:
+        return (
+            f"<section class='card'>"
+            f"<h2>多人审批工作台</h2>"
+            f"<p class='muted'>尚未开启多人审核流程。指派审核者后即可逐条评论、记录改动，并最终确认。</p>"
+            f"<form method='post' action='/audits/{_esc(bundle.run_id)}/start_review'>"
+            f"<input type='hidden' name='expected_audit_digest' value='{_esc(audit_snapshot_digest)}'>"
+            f"<label>指派第一个审核者</label>"
+            f"<input name='reviewer' required maxlength='100' placeholder='如：法务 Alice'>"
+            f"<button type='submit'>开启多人审核</button></form></section>"
+        )
+    timeline = _render_workflow_timeline(workflow)
+    state_label = _WORKFLOW_LABELS.get(workflow.state, workflow.state)
+    state_class = 'ok' if workflow.state == 'approved' else ('warn' if workflow.state == 'changes_requested' else '')
+    decide_form = ''
+    if workflow.state in {'in_review', 'changes_requested'}:
+        decide_form = (
+            f"<form method='post' action='/audits/{_esc(bundle.run_id)}/decide'>"
+            f"<input type='hidden' name='expected_version' value='{_esc(version)}'>"
+            f"<input type='hidden' name='expected_audit_digest' value='{_esc(audit_snapshot_digest)}'>"
+            f"<label>最终确认者</label><input name='reviewer' required maxlength='100' placeholder='最终签字'>"
+            f"<label>备注（可选）</label><textarea name='notes' maxlength='2000' style='min-height:70px'></textarea>"
+            f"<label class='check'><input type='checkbox' name='source_checked' value='yes' required>"
+            f"<span>我已核对修订稿中的主张、来源，以及所有审核者的修改记录。</span></label>"
+            f"<button type='submit'>完成最终确认</button></form>"
+        )
+    elif workflow.state == 'submitted':
+        decide_form = (
+            f"<form method='post' action='/audits/{_esc(bundle.run_id)}/start_review'>"
+            f"<input type='hidden' name='expected_audit_digest' value='{_esc(audit_snapshot_digest)}'>"
+            f"<label>第一位接手审核</label><input name='reviewer' required maxlength='100'>"
+            f"<button type='submit'>接手审核</button></form>"
+        )
+    elif workflow.state == 'approved':
+        decide_form = (
+            f"<p class='badge ok'>已完成终审 · {_esc(workflow.final_reviewer or '')}</p>"
+            f"<p class='muted'>该文案已锁定，可继续在本地分镜 / 视频制作中使用；批准记录与本次资料快照以 SHA256 绑定。</p>"
+        )
+    return (
+        f"<section class='card'>"
+        f"<h2>多人审批工作台</h2>"
+        f"<p class='badge {state_class}'>状态：{_esc(state_label)}</p>"
+        f"<p class='muted'>接手：{_esc('、'.join(workflow.reviewers)) or '—'} · 开始：{_esc(workflow.opened_at_utc or '')}</p>"
+        f"{timeline}"
+        f"{decide_form}</section>"
+        f"<section class='card'>"
+        f"<h2>添加审核评论</h2>"
+        f"<form method='post' action='/audits/{_esc(bundle.run_id)}/comment'>"
+        f"<div class='field-pair'>"
+        f"<div><label>评论者</label><input name='author' required maxlength='100'></div>"
+        f"<div><label>类型</label><select name='intent'>"
+        f"<option value='comment'>普通评论</option>"
+        f"<option value='change'>请求修订</option></select></div></div>"
+        f"<label>评论正文</label><textarea name='text' required maxlength='2000' style='min-height:90px'></textarea>"
+        f"<button type='submit'>提交评论</button></form></section>"
+    )
+
+
+def _render_workflow_timeline(workflow: ApprovalWorkflow) -> str:
+    parts = ["<h3>审核时间轴</h3>"]
+    if workflow.modifications:
+        parts.append("<h4 style='margin:12px 0 8px'>修订历史</h4>")
+        for entry in workflow.modifications:
+            parts.append(
+                "<article class='source'>"
+                f"<p class='muted'>{_esc(entry.at_utc)} · {_esc(entry.requested_by)}</p>"
+                f"<p><strong>原因：</strong>{_esc(entry.reason)}</p>"
+                f"<div class='copy'>{_esc(entry.before_text)}<br><span class='muted'>↓</span><br>{_esc(entry.after_text)}</div>"
+                "</article>"
+            )
+    if workflow.comments:
+        parts.append("<h4 style='margin:12px 0 8px'>评论</h4>")
+        for comment in workflow.comments:
+            tag = ' · 终审后补充' if comment.phase == 'post_approval' else ''
+            parts.append(
+                "<article class='source'>"
+                f"<p class='muted'>{_esc(comment.created_at_utc)} · {_esc(comment.author)}{_esc(tag)}</p>"
+                f"<p>{_esc(comment.text)}</p></article>"
+            )
+    if not workflow.modifications and not workflow.comments:
+        parts.append("<p class='muted'>还没有任何评论或修订记录。</p>")
+    return "".join(parts)
+
+
+async def _workflow_post(
+    request: Request,
+    *,
+    action: str,
+    fields: tuple[tuple[str, str], ...],
+) -> HTMLResponse | RedirectResponse:
+    """Common dispatch: validate, run the workflow call, redirect back to the audit page."""
+    directory = _run_dir(request, request.path_params['run_id'])
+    _fixed_file(directory, 'audit_bundle.json')
+    run_id = request.path_params['run_id']
+    try:
+        form = await _form(request)
+        expected_audit_digest = form.pop('expected_audit_digest', '')
+        if expected_audit_digest and not re.fullmatch(r'[a-f0-9]{64}', expected_audit_digest):
+            raise ValueError('资料快照版本无效，请重新打开审核页面。')
+        for name, label in fields:
+            value = form.get(name, '')
+            if not value or not value.strip():
+                raise ValueError(f'{label}不能为空。')
+            form[name] = value
+        if action == 'start_review':
+            start_review(directory, reviewer=form['reviewer'], expected_audit_digest=expected_audit_digest or None)
+        elif action == 'comment':
+            intent = form.get('intent', 'comment')
+            comment_on_audit(directory, author=form['author'], text=form['text'])
+            if intent == 'change':
+                request_changes(directory, reviewer=form['author'], notes=form['text'], expected_audit_digest=expected_audit_digest or None)
+        elif action == 'request_changes':
+            request_changes(directory, reviewer=form['reviewer'], notes=form.get('notes', ''), expected_audit_digest=expected_audit_digest or None)
+        elif action == 'reopen':
+            reopen_for_review(directory)
+        elif action == 'decide':
+            version = form.get('expected_version', '')
+            if not re.fullmatch(r'[a-f0-9]{64}', version):
+                raise ValueError('确认版本无效，请重新打开审核页面。')
+            submit_approval_decision(
+                directory,
+                reviewer=form['reviewer'],
+                notes=form.get('notes', ''),
+                expected_version=version,
+                expected_audit_digest=expected_audit_digest or None,
+            )
+        else:
+            raise ValueError('未知的工作台操作。')
+        return RedirectResponse(f"/audits/{run_id}", status_code=303)
+    except _Problem as exc:
+        return _page('无法提交', f"<h1>无法提交</h1><p>{_esc(exc.message)}</p><a href='/audits/{_esc(run_id)}'>返回审核</a>", exc.status)
+    except (OSError, ValueError, TypeError) as exc:
+        return _page('无法提交', f"<h1>无法处理该工作台操作</h1><p>{_esc(exc)}</p><a href='/audits/{_esc(run_id)}'>返回审核</a>", 400)
+
+
+async def audit_start_review(request: Request) -> RedirectResponse:
+    return await _workflow_post(request, action='start_review', fields=(('reviewer', '审核者署名'),))
+
+
+async def audit_comment(request: Request) -> RedirectResponse:
+    return await _workflow_post(request, action='comment', fields=(('author', '评论者署名'), ('text', '评论正文'),))
+
+
+async def audit_request_changes(request: Request) -> RedirectResponse:
+    return await _workflow_post(request, action='request_changes', fields=(('reviewer', '审核者署名'),))
+
+
+async def audit_reopen(request: Request) -> RedirectResponse:
+    return await _workflow_post(request, action='reopen', fields=())
+
+
+async def audit_decide(request: Request) -> RedirectResponse:
+    return await _workflow_post(request, action='decide', fields=(('reviewer', '最终确认者署名'),))
 
 
 async def media_video(request: Request):
@@ -421,7 +602,13 @@ def create_app(*, output_root: Path = DEFAULT_OUTPUT_ROOT, audit_runner=None, ma
         Route('/', index, methods=['GET']), Route('/audit', audit_run, methods=['POST']),
         Route('/api/audits', api_audit, methods=['POST']), Route('/api/jobs/{job_id}', api_job, methods=['GET']),
         Route('/jobs/{job_id}', job_page, methods=['GET']), Route('/audits/{run_id}', audit_review, methods=['GET']),
-        Route('/audits/{run_id}/approve', audit_approve, methods=['POST']), Route('/media/{run_id}/video', media_video, methods=['GET']),
+        Route('/audits/{run_id}/approve', audit_approve, methods=['POST']),
+        Route('/audits/{run_id}/start_review', audit_start_review, methods=['POST']),
+        Route('/audits/{run_id}/comment', audit_comment, methods=['POST']),
+        Route('/audits/{run_id}/request_changes', audit_request_changes, methods=['POST']),
+        Route('/audits/{run_id}/reopen', audit_reopen, methods=['POST']),
+        Route('/audits/{run_id}/decide', audit_decide, methods=['POST']),
+        Route('/media/{run_id}/video', media_video, methods=['GET']),
         Route('/generate', generate_form, methods=['GET']), Route('/run', run, methods=['POST']),
         Route('/runs/{run_id}', review, methods=['GET']), Route('/health', health, methods=['GET']),
     ])

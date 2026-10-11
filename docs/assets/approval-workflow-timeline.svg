@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="system-ui, 'Microsoft YaHei', sans-serif">
+  <rect width="1100" height="460" fill="#f3f6fb"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#275fe8"/>
+    </marker>
+    <marker id="arrow-grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8ea6"/>
+    </marker>
+  </defs>
+  <text x="40" y="48" font-size="22" font-weight="700" fill="#17283a">营销文案 · 多人审批工作台 · 状态机</text>
+  <text x="40" y="76" font-size="13" fill="#60738a">每个审核者都可以留评论、贴修改片段、签字确认；audit_workflow.json 与 audit_bundle.json 的 SHA256 绑定，文案一改动即作废。</text>
+
+  <!-- nodes -->
+  <g transform="translate(80,150)">
+    <rect width="160" height="80" rx="14" fill="#fff" stroke="#e1e8f0" stroke-width="1"/>
+    <text x="80" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#17283a">submitted</text>
+    <text x="80" y="58" text-anchor="middle" font-size="11" fill="#60738a">待指派（自动）</text>
+    <text x="80" y="74" text-anchor="middle" font-size="11" fill="#275fe8">/audits/{id}/start_review</text>
+  </g>
+
+  <g transform="translate(310,150)">
+    <rect width="160" height="80" rx="14" fill="#edf2fc" stroke="#275fe8" stroke-width="2"/>
+    <text x="80" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#17283a">in_review</text>
+    <text x="80" y="58" text-anchor="middle" font-size="11" fill="#275fe8">多人审核中</text>
+    <text x="80" y="74" text-anchor="middle" font-size="11" fill="#2459b6">comment · record_modification</text>
+  </g>
+
+  <g transform="translate(540,150)">
+    <rect width="180" height="80" rx="14" fill="#fff3df" stroke="#f0c98d" stroke-width="2"/>
+    <text x="90" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#17283a">changes_requested</text>
+    <text x="90" y="58" text-anchor="middle" font-size="11" fill="#84520d">已请求修订</text>
+    <text x="90" y="74" text-anchor="middle" font-size="11" fill="#84520d">/reopen · 重新进入 in_review</text>
+  </g>
+
+  <g transform="translate(790,150)">
+    <rect width="160" height="80" rx="14" fill="#eaf7ef" stroke="#a8d6bb" stroke-width="2"/>
+    <text x="80" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#17283a">approved</text>
+    <text x="80" y="58" text-anchor="middle" font-size="11" fill="#216348">已经多方确认</text>
+    <text x="80" y="74" text-anchor="middle" font-size="11" fill="#216348">/decide · 终审签字</text>
+  </g>
+
+  <!-- arrows -->
+  <line x1="240" y1="190" x2="305" y2="190" stroke="#275fe8" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="470" y1="190" x2="535" y2="190" stroke="#7a8ea6" stroke-width="2" marker-end="url(#arrow-grey)"/>
+  <path d="M 470 200 C 460 280, 600 280, 720 195" fill="none" stroke="#7a8ea6" stroke-width="2" marker-end="url(#arrow-grey)"/>
+  <path d="M 720 195 C 720 270, 850 270, 870 195" fill="none" stroke="#7a8ea6" stroke-width="2" marker-end="url(#arrow-grey)"/>
+
+  <!-- timeline strip -->
+  <g transform="translate(80,290)">
+    <text x="0" y="0" font-size="14" font-weight="700" fill="#17283a">审核时间轴（按发生顺序）</text>
+    <line x1="0" y1="30" x2="980" y2="30" stroke="#c8d3df" stroke-width="3"/>
+    <g transform="translate(0,30)">
+      <circle cx="0" cy="0" r="9" fill="#fff" stroke="#275fe8" stroke-width="2"/>
+      <text x="0" y="-14" text-anchor="middle" font-size="11" fill="#275fe8">start</text>
+    </g>
+    <g transform="translate(165,30)">
+      <circle cx="0" cy="0" r="9" fill="#edf2fc" stroke="#275fe8" stroke-width="2"/>
+      <text x="0" y="-14" text-anchor="middle" font-size="11" fill="#275fe8">comment</text>
+    </g>
+    <g transform="translate(330,30)">
+      <circle cx="0" cy="0" r="9" fill="#fff3df" stroke="#f0c98d" stroke-width="2"/>
+      <text x="0" y="-14" text-anchor="middle" font-size="11" fill="#84520d">modification</text>
+    </g>
+    <g transform="translate(495,30)">
+      <circle cx="0" cy="0" r="9" fill="#fff3df" stroke="#f0c98d" stroke-width="2"/>
+      <text x="0" y="-14" text-anchor="middle" font-size="11" fill="#84520d">reopen</text>
+    </g>
+    <g transform="translate(660,30)">
+      <circle cx="0" cy="0" r="9" fill="#edf2fc" stroke="#275fe8" stroke-width="2"/>
+      <text x="0" y="-22" text-anchor="middle" font-size="11" fill="#275fe8">comment</text>
+      <text x="0" y="28" text-anchor="middle" font-size="11" fill="#275fe8">comment</text>
+    </g>
+    <g transform="translate(870,30)">
+      <circle cx="0" cy="0" r="9" fill="#eaf7ef" stroke="#a8d6bb" stroke-width="2"/>
+      <text x="0" y="-14" text-anchor="middle" font-size="11" fill="#216348">decide</text>
+    </g>
+    <text x="0" y="60" font-size="11" fill="#60738a">Audit digest + copy SHA256 双向绑定，audit_bundle.json 改一个字都会使 approval / workflow 失效。</text>
+  </g>
+
+  <text x="40" y="430" font-size="11" fill="#60738a">claim-studio · v0.5.0 · approval_workflow.py</text>
+</svg>

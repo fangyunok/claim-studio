@@ -37,6 +37,9 @@ v0.3 增加“确认修订文案 → 三段模板分镜 → 自有图片 / 短�
 | 可观测性 | OTEL span + Prometheus `/v1/metrics`，缺包时全部降级 no-op | [可观测性](docs/OBSERVABILITY.md) |
 | 数据版本化 | 快照 → per-feature 漂移告警 → 人工审批门（签名永久审计） | [数据更新](docs/DATA_UPDATE.md) |
 | 审批绑定 | 文案 SHA256 + 完整审核包 SHA256 双绑定，任一方改动即失效 | `approval.py` |
+| 多人审批工作台 | 状态机 `submitted → in_review → {approved, changes_requested}`，评论 / 修改历史永久落在 `audit_workflow.json`，与 `audit_bundle.json` 共享同一 audit_digest | `approval_workflow.py` |
+
+![审核工作台状态机与时间轴](docs/assets/approval-workflow-timeline.svg)
 | 媒体链路 | 三段模板分镜 → FFmpeg 竖屏字幕 MP4，含完整解码检查 | [媒体说明](docs/MEDIA.md) |
 
 ## 各模块做什么

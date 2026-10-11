@@ -70,12 +70,12 @@
 
 | 板块 | 当前 | 路线 |
 | --- | --- | --- |
-| 审校维度 | 字面规则 + 引用结构校验 | 增加 `claim_nature` 五分类（puffery / factual / comparative / implied / absolute），命中法律侧广告法规的标签口径 |
-| 模型 provider | `qwen`（Ollama 本地） + `api`（OpenAI 兼容） | 显化 DashScope / DeepSeek 适配路径，含 token 计费、超时与重试，配置项收敛到环境变量 |
-| 审批工作台 | 单 reviewer 一次性确认 | 评论 + 修改时间轴 + 多 reviewer 状态机（submitted → in_review → approved / changes_requested） |
-| 集成层 | 单机本地 CLI / Service | Webhook 推送（HMAC 签名，可在闭网环境停用）；宿主 Agent 把仓库挂成本地 MCP skill，详见 [`PROOF_GUARD_SKILL.md`](PROOF_GUARD_SKILL.md) |
-| 文档与可信任口径 | 检索／评测／服务说明 | 新增 [`TRUST_NOTES.md`](TRUST_NOTES.md) 描述审计日志、隔离、审批门、哨兵、部署边界，作为对外合作的可信任口径 |
-| 公网演示 | 仅本机端口 7860 | 适配 Hugging Face Spaces / WorkBuddy sites 的纯静态 demo 页（不接真模型，只跑模板数据） |
+| 审校维度 | 字面规则 + 引用结构校验 | ✅ v0.5.0：A-1 已落地 `claim_nature` 五分类（`schemas.py` / `audit.py` 加 Optional 字段，13 项新测试）—— puffery / factual / comparative / implied / absolute |
+| 模型 provider | `qwen`（Ollama 本地） + `api`（OpenAI 兼容） | ✅ v0.5.0：A-2 已落地 DashScope / DeepSeek provider 分发（`generation.py` + `GROWTH_API_PROVIDER` 环境变量、17 项新测试、DashScope 定价表）—— DeepSeek 故意不估成本（vendor 价格频繁变动） |
+| 审批工作台 | 单 reviewer 一次性确认 | ✅ v0.5.0：B 阶段已落地状态机（`approval_workflow.py` / `webapp.py` 加 5 个端点）—— 评论 / 修改 / 多人 / 再开；21 项新测试；`docs/assets/approval-workflow-timeline.svg` 状态机图 |
+| 集成层 | 单机本地 CLI / Service | 🛠 Roadmap：Webhook 推送（HMAC 签名，闭网可关），宿主 Agent 把仓库挂成本地 MCP skill，详见 [`PROOF_GUARD_SKILL.md`](PROOF_GUARD_SKILL.md) |
+| 文档与可信任口径 | 检索／评测／服务说明 | ✅ v0.5.0 已落地 [`TRUST_NOTES.md`](TRUST_NOTES.md)（审计日志永久不可篡改 / 双 SHA256 绑定 / 数据隔离 / 审批门 / 哨兵可观测）以及 [`ASSETS.md`](ASSETS.md)（视觉资产清单） |
+| 公网演示 | 仅本机端口 7860 | 🛠 Roadmap：适配 Hugging Face Spaces / WorkBuddy sites 的纯静态 demo 页（不接真模型，只跑模板数据 + 5 策略切换示意） |
 
 v0.5.0 走**大版本号升一档**口径：变更集中在一个 PR，148 项既有测试不破坏；新能力由本节"路线"条目驱动，每个条目独立可回滚。
 
