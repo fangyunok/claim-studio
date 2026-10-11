@@ -53,7 +53,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 # ---------- Configuration ----------
 SERVICE_NAME = "claim-studio"
-SERVICE_VERSION = "0.4.0"
+SERVICE_VERSION = "0.5.0"
 
 
 # ---------- Provider setup ----------

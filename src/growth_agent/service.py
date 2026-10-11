@@ -97,7 +97,7 @@ class AuditSubmitResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: Literal["ok"] = "ok"
     service: str = "claim-studio"
-    version: str = "0.4.0"
+    version: str = "0.5.0"
     concurrency_limit: int
 
 
@@ -121,7 +121,7 @@ async def lifespan(_: FastAPI):
 # ---------- App ----------
 app = FastAPI(
     title="claim-studio audit service",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
     description=(
         "Production-style audit API for evidence-based marketing claim review. "
