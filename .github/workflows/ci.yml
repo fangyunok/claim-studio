@@ -30,7 +30,9 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-noto-cjk
       - name: Install package
-        run: python -m pip install -e ".[media,service,observability]"
+        run: python -m pip install -e ".[dev,media,service,observability]"
+      - name: Pytest-style suites
+        run: python -m pytest tests/test_puffery.py tests/test_dashscope_provider.py -q
       - name: Unit tests and actual FFmpeg render and decode
         shell: python
         run: |

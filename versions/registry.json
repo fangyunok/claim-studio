@@ -2,7 +2,7 @@
   "versions": [
     {
       "name": "v1",
-      "generated_at": "2026-10-04T13:24:29Z",
+      "generated_at": "2026-10-11T12:13:07Z",
       "fact_count": 690,
       "added": 690,
       "removed": 0,
@@ -11,7 +11,7 @@
     },
     {
       "name": "v2",
-      "generated_at": "2026-10-04T13:24:30Z",
+      "generated_at": "2026-10-11T12:13:09Z",
       "fact_count": 690,
       "added": 0,
       "removed": 0,
@@ -19,7 +19,5 @@
       "mode": "fixture"
     }
   ],
-  "active": "v2",
-  "active_activated_at": "2026-10-04T13:24:32Z",
-  "active_signed_by": "fangyunok"
+  "active": null
 }

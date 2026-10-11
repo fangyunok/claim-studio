@@ -6,7 +6,7 @@ the cost flat — what we are measuring is the **service layer overhead**
 (middleware, validation, semaphore, JSON serialization).
 
 Real-model benchmarks require a live LLM and live in
-``reports/perf-model-llm.json``; see ``docs/BUILD_LOG.md``.
+``reports/perf-model-llm.json``.
 """
 
 from __future__ import annotations
@@ -163,7 +163,7 @@ async def main() -> None:
         "runs": results,
         "notes": [
             "Bench delay of 50ms stands in for a real LLM call; the service-layer overhead is what is measured here.",
-            "Live-model benchmarks live in reports/perf-model-llm.json (see docs/BUILD_LOG.md).",
+            "Live-model benchmarks live in reports/perf-model-llm.json.",
             "Status 429 indicates the global asyncio.Semaphore (default 8) refused; tune GROWTH_SERVICE_CONCURRENCY upward.",
         ],
     }

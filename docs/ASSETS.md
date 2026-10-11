@@ -8,7 +8,7 @@
 | 文件 | 内容 | 来源 | 用在 |
 |---|---|---|---|
 | `docs/assets/claim-studio-home.png` | 工作台首页截图 | 真实 `webapp.py` `GET /` 渲染（本地） | `README.md`、`docs/PROOF_GUARD_SKILL.md` |
-| `docs/assets/template-media-preview.png` | 三段分镜合成示意图 | `media.py` `build_template_storyboard` 实际产物 (720×1280) | `docs/SERVICE.md`、`docs/BUILD_LOG.md` |
+| `docs/assets/template-media-preview.png` | 三段分镜合成示意图 | `media.py` `build_template_storyboard` 实际产物 (720×1280) | `docs/SERVICE.md` |
 | `docs/assets/template-media-demo.mp4` | FFmpeg 生成的 15s 演示视频 | 真实 `render_video` 产出 | 外部 resume 链接 |
 | `docs/assets/approval-workflow-timeline.svg` | 多人审批状态机 + 审核时间轴 | 当前源码绘制的 SVG | `README.md`、`docs/SERVICE.md` |
 

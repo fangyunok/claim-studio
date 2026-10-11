@@ -316,8 +316,11 @@ async def audit_review(request: Request) -> HTMLResponse:
     citations = ''.join(f"<div class='source'><p>“{_esc(citation.quote)}”</p><p class='muted'>对应资料：<code>{_esc(citation.fact_id)}</code></p>{_source_link(str(facts.get(citation.fact_id, {}).get('source_url', '未找到来源')))}</div>" for citation in proposal.citations) if proposal else ''
     sources = ''.join(f"<article class='source'><h3>{_esc(fact.get('source_title', fact['id']))}</h3><p class='muted'><code>{_esc(fact['id'])}</code> · 核对日期 {_esc(fact.get('checked_at', '未记录'))}</p><blockquote>{_esc(fact.get('source_quote', ''))}</blockquote><p>{_esc(fact.get('availability_note', ''))}</p>{_source_link(str(fact.get('source_url', '')))}</article>" for fact in facts.values())
     approval = ''
+    # ``version`` is consumed by both the approval card and the multi-reviewer
+    # workflow section below, so it must be bound on every code path — not only
+    # when a confirmable proposal exists.
+    version = copy_digest(proposal.revised_copy) if proposal else ''
     if proposal and bundle.status == 'pending_review' and bundle.revised_checks.get('passed') is True:
-        version = copy_digest(proposal.revised_copy)
         try:
             approval_record = _json_file(_fixed_file(directory, 'audit_approval.json'))
             if approval_record.get('audit_digest') != audit_snapshot_digest:

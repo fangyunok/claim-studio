@@ -24,7 +24,7 @@ v0.3 增加“确认修订文案 → 三段模板分镜 → 自有图片 / 短�
 
 | 维度 | 实测值 | 出处 |
 | --- | --- | --- |
-| 自动化测试 | **148 用例 / 15 文件** | `pytest tests/` |
+| 自动化测试 | **192 用例 / 19 文件**（unittest 162 + pytest 30） | `python -m unittest discover -s tests` · `pytest tests/test_puffery.py tests/test_dashscope_provider.py` |
 | CI 矩阵 | **Windows + Ubuntu × Python 3.11 / 3.12** | `.github/workflows/ci.yml` |
 | 检索策略 | **5 种**（`lexical`/`bm25`/`vector`/`hybrid`/`hybrid-rerank`）经同一接口切换，MCP 工具签名不变 | `GROWTH_RETRIEVAL` |
 | 检索质量 | 主题级 Hit@5 **10.0% → 43.3%**；中文分组 **0% → 33.3%** | [检索结果](docs/RETRIEVAL_RESULTS.md) |
@@ -166,7 +166,7 @@ $env:GROWTH_QWEN_MODEL = 'qwen3:4b-instruct'
 
 提供 `POST /v1/audits`、`GET /v1/audits/{run_id}`、`GET /v1/healthz`、`GET /v1/readyz`，并自动生成 OpenAPI 文档（`/openapi.json`、`/docs`）。每个响应回带 `X-Trace-Id` 与 `X-Duration-Ms`，全局并发上限默认 8（可经 `GROWTH_SERVICE_CONCURRENCY` 调整）。
 
-完整文档与端到端测试见 [docs/SERVICE.md](docs/SERVICE.md)；13 个新增/再跑现有测试全部通过（`pytest tests/test_service.py`）；基准性能数据见 `reports/perf-service.json`。
+完整文档与端到端测试见 [docs/SERVICE.md](docs/SERVICE.md)；13 个新增/再跑现有测试全部通过（`python -m unittest tests.test_service`）；基准性能数据见 `reports/perf-service.json`。
 
 ## 检索策略与评测
 
@@ -220,4 +220,3 @@ $env:GROWTH_QWEN_MODEL = 'qwen3:4b-instruct'
 | [数据更新](docs/DATA_UPDATE.md) · [数据来源](docs/DATA_PROVENANCE.md) | 版本化快照、漂移告警、审批门与语料来源 |
 | [媒体说明](docs/MEDIA.md) | 分镜、素材、字幕与 FFmpeg 渲染 |
 | [GPU 服务器配置](docs/AUTODL_SETUP.md) | 远端 Ollama 与 SSH 隧道 |
-| [构建记录](docs/BUILD_LOG.md) | 实现步骤、设计决策与 Roadmap |
